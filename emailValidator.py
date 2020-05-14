@@ -3,8 +3,10 @@ import json
 import time
 import requests
 
+print("Starting email validation")
+
 callbackUrl = "http://localhost:8080/callback"
-channel = 'email-validator'
+channel = 'email-validator-eyvc79BEYdycHYQFhqCKXKsdzqt'
 channelResponse = 'email-validator-response'
 
 client = redis.Redis(host = '127.0.0.1', port = 6379)
@@ -12,7 +14,10 @@ client = redis.Redis(host = '127.0.0.1', port = 6379)
 p = client.pubsub()
 p.subscribe(channel)
 
+print("Service started")
+
 while True:
+    
     message = p.get_message()
 
     if message and not message['data'] == 1:
