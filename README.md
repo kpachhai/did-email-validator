@@ -1,9 +1,9 @@
 # DID Email Validator for Vouch
 
-To start, clone vouch-restapi-backend repo
+To start, clone did-email-validator repo
 ```
 git clone https://github.com/tuum-tech/did-email-validaor.git;
-cd vouch-restapi-backend;
+cd did-email-validator;
 ```
 # Prerequisites
 - Python3 is needed
