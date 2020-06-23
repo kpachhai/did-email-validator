@@ -3,6 +3,10 @@ node_modules/
 .DS_Store
 **/.DS_Store
 
+**/didstore
+**/.cache.did.elastos
+**/lib/__pycache__
+
 # Environments
 .env
 .venv

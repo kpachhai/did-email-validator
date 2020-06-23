@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 function start () {
-    docker container stop vouch-mongo || true && docker container rm -f vouch-mongo || true
-    docker run -d --name assist-mongo                     \
+    docker container stop validator-mongo || true && docker container rm -f validator-mongo || true
+    docker run -d --name validator-mongo                     \
         -e MONGO_INITDB_ROOT_USERNAME=mongoadmin          \
-        -e MONGO_INITDB_ROOT_PASSWORD=vouchmongo         \
-        -p 27018:27017                                      \
+        -e MONGO_INITDB_ROOT_PASSWORD=validatormongo         \
+        -p 27020:27017                                      \
         mongo
 
     virtualenv -p `which python3` .venv
@@ -24,11 +24,11 @@ function start () {
     ;;
     esac
 
-    gunicorn -b 0.0.0.0:8000 --reload app.main:application
+    gunicorn -b 0.0.0.0:8001 --reload app:application
 }
 
 function stop () {
-    docker container stop vouch-mongo || true && docker container rm -f vouch-mongo || true
+    docker container stop validator-mongo || true && docker container rm -f validator-mongo || true
     ps -ef | grep gunicorn | awk '{print $2}' | xargs kill -9
 }
 
