@@ -9,6 +9,7 @@ localrun.sh
 # Environments
 .env
 venv/
+.venv
 
 # pycharm
 __pycache__

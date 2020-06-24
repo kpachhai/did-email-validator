@@ -79,9 +79,10 @@ def import_did():
         # Retrieve the DID url string
         didurl = did_api.DIDDocument_GetDefaultPublicKey(did_doc)
         didurl_buf = ctypes.create_string_buffer(did_api.MAX_DIDURL)
-        config.WALLET["DID_REQUESTER"] = did_api.DIDURL_ToString(didurl, didurl_buf, did_api.MAX_DIDURL, False)
+        config.WALLET["DID_REQUESTER"] = did_api.DIDURL_ToString(didurl, didurl_buf, did_api.MAX_DIDURL, False).decode("utf-8")
 
         row = DidImport(did=config.WALLET["DID_REQUESTER"])
+
         row.save()
         return row
 
@@ -119,7 +120,7 @@ def issue_credential(target_did, email):
 
         requester = config.WALLET["DID_REQUESTER"].encode('utf-8')
 
-        LOG.info(requester)
+        LOG.info("Requester:", requester)
 
         didurl = did_api.DIDURL_FromString(requester, None)
         if didurl == None:

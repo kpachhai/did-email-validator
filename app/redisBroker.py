@@ -124,7 +124,7 @@ def send_email(doc):
 def get_elastos_sign_in_url(requestId):
     jwt_claims = {
         'appid': requestId,
-        'iss': config.WALLET["DID_REQUESTER"].decode("utf-8"),
+        'iss': config.WALLET["DID_REQUESTER"],
         'iat': int(round(time.time())),
         'exp': int(round(time.time() + 300)),
         'callbackurl': config.EMAIL["CALLBACK_URL"]
