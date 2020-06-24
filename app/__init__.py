@@ -35,7 +35,7 @@ connect(
          config.MONGO['HOST'] + ":" + str(config.MONGO['PORT']) + "/?authSource=admin"
 )
 
-#credentialGenerator.import_did()
+credentialGenerator.import_did()
 
 cors = CORS(
     allow_all_origins=True,

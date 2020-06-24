@@ -24,7 +24,7 @@ REDIS = {
 }
 
 WALLET = {
-    "DID_REQUESTER": config('WALLET_DID_REQUESTER'), 
+    "DID_REQUESTER": "", 
     "STORE_ROOT": config('WALLET_STORE_ROOT'),
     "STORE_PASSWORD": config('WALLET_STORE_PASSWORD'),
     "MNEMONIC": config('WALLET_MNEMONIC'),

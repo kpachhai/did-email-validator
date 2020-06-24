@@ -1,5 +1,5 @@
 from app import log, config
-
+from app.model.didimport import DidImport
 import os
 import sys
 import textwrap
@@ -32,6 +32,14 @@ except NameError:
 
 def import_did():
     try:
+
+        didimport_rows = DidImport.objects()
+
+        if didimport_rows:
+           config.WALLET["DID_REQUESTER"] = didimport_rows[0].did
+           LOG.info("Import DID issuer {}".format(config.WALLET["DID_REQUESTER"]))
+           return   
+
         LOG.info("Initializing DID Store")
         # Get the bindings helper object
         did_api = ela_did.getElaDIDAPI()
@@ -72,7 +80,12 @@ def import_did():
         didurl = did_api.DIDDocument_GetDefaultPublicKey(did_doc)
         didurl_buf = ctypes.create_string_buffer(did_api.MAX_DIDURL)
         config.WALLET["DID_REQUESTER"] = did_api.DIDURL_ToString(didurl, didurl_buf, did_api.MAX_DIDURL, False)
+
+        row = DidImport(did=config.WALLET["DID_REQUESTER"])
+        row.save()
+
         LOG.info("DID Requester loaded: {0}".format(config.WALLET["DID_REQUESTER"]))
+
     except RuntimeError as err:
         errormessage = did_api.DIDError_GetMessage()
         LOG.error("DID - last error message: ".encode('utf-8') + errormessage)
