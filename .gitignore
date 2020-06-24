@@ -1,6 +1,11 @@
 .DS_Store
 **/.DS_Store
 
+**/didstore
+**/.cache.did.elastos
+**/lib/__pycache__
+
+localrun.sh
 # Environments
 .env
 venv/

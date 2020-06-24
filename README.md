@@ -1,38 +1,34 @@
-# DID Email Validator for Vouch
+# Did email validator Rest API
 
 To start, clone did-email-validator repo
 ```
-git clone https://github.com/tuum-tech/did-email-validaor.git;
+git clone https://github.com/tuum-tech/did-email-validator.git;
 cd did-email-validator;
 ```
-# Prerequisites
-- Python3 is needed
-```
-brew install python3 // On Mac
-sudo apt-get install python3 // On linux
-```
-- Virtualenv
-```
-pip3 install virtualenv
-```
 
-# Setup
-Before you start, you have to initiate vouch-redis-broker https://github.com/tuum-tech/vouch-redis-broker
-- Create a python virtual environment
+# Prerequisites
+- Install required packages[Only needs to be done once]
 ```
-virtualenv -p `which python3` venv
-```
-- Activate the virtualenv environment
-```
-source venv/bin/activate
-```
-- Install the dependencies
-```
-pip install -r requirements.txt
+./install.sh
 ```
 
 # Run
-- Start DID Validator service
+- Copy example environment file
 ```
-python emailValidator.py
+cp .env.example .env
+```
+- Modify .env file with any number of wallets to use
+- Start API server
+```
+./run.sh start
+```
+
+# Verify
+- To check whether the API is working:
+```
+curl http://localhost:8081
+```
+- To validate an email:
+```
+curl -XPOST -H "Content-Type: application/json" -H "Accept: application/json" -d '{"jwt": "JWT_TOKEN_HERE"}' http://localhost:8081/v1/validation/callback
 ```
