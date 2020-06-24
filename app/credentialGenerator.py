@@ -140,10 +140,20 @@ def issue_credential(target_did, email):
         if crediddidurl == None:
             raise RuntimeError("Failed to create the credential ID DID URL.")
 
+        # service = {
+        #     "type": "Email Validation Service",
+        #     "email": email
+        # }
+
+        # # Create a new property entry (one of several possible)
+        # emailprop = ela_did.Property2("service".encode('utf-8'), service )
+
         # Create a new property entry (one of several possible)
         emailprop = ela_did.Property("email".encode('utf-8'), email.encode('utf-8'))
 
-        TypesArrayType = ctypes.c_char_p * 2
+
+
+        TypesArrayType = ctypes.c_char_p * 1
         PropertyArrayType = ela_did.Property * 1
 
         store_password = config.WALLET["STORE_PASSWORD"].encode('utf-8')
@@ -157,8 +167,8 @@ def issue_credential(target_did, email):
             issuer,
             targetdid,
             crediddidurl,
-            TypesArrayType("MyType".encode('utf-8'), "MyOtherType".encode('utf-8')), #
-            2,
+            TypesArrayType("VerifiableCredential".encode('utf-8')), #
+            1,
             PropertyArrayType(emailprop),
             1,
             timestampExp, # Timestamp
@@ -168,6 +178,8 @@ def issue_credential(target_did, email):
             raise RuntimeError("Failed to generate the credential.")
         
         jsonCredential = did_api.Credential_ToJson(issuedcredential, True)
+
+        print(jsonCredential)
 
         return jsonCredential
     except RuntimeError as err:

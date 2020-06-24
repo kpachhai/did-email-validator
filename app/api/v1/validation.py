@@ -47,8 +47,8 @@ class EmailConfirmation(BaseResource):
 
             item = rows[0]
             
-            # if not item.status == EmailValidationStatus.WAITING_RESPONSE:
-            #     raise RuntimeError("ERROR: Request is already processed")
+            if not item.status == EmailValidationStatus.WAITING_RESPONSE:
+                raise RuntimeError("ERROR: Request is already processed")
           
             if item.did != did:
                item.reason = "Did is not the same"

@@ -17,16 +17,18 @@ from app.model.emailValidationTx import EmailValidationTx, EmailValidationStatus
 
 LOG = log.get_logger()
 
-broker =  redis.Redis(host = config.REDIS['HOST'], port = config.REDIS['PORT'])
+
 
 
 def send_email_response(doc):
+    broker =  redis.Redis(host = config.REDIS['HOST'], port = config.REDIS['PORT'])
     channel = "email-validator-response"
     broker.publish(channel, json.dumps(doc))
 
    
 def monitor_redis():
     LOG.info("Starting email validator monitor")
+    
     channel =  "email-validator-{0}".format(config.VOUCH_APIKEY)
 
     client = redis.Redis(host = config.REDIS["HOST"], port = config.REDIS["PORT"])
