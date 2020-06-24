@@ -26,8 +26,6 @@ class EmailConfirmation(BaseResource):
             LOG.info("Receiving Callback")
 
             data = req.media
-
-            print(data)
             
             jwt_token = jwt.decode(data["jwt"], verify=False)
             didurl = jwt_token['presentation']['proof']['verificationMethod']
@@ -43,21 +41,20 @@ class EmailConfirmation(BaseResource):
             rows = EmailValidationTx.objects(transactionId=requestId)
 
             if not rows:
-                raise RuntimeError("ERROR: Request not found")
+                raise AppError(description="ERROR: Request not found")
 
             item = rows[0]
             
             if not item.status == EmailValidationStatus.WAITING_RESPONSE:
-                raise RuntimeError("ERROR: Request is already processed")
+                raise AppError(description="ERROR: Request is already processed")
           
             if item.did != did:
                item.reason = "Did is not the same"
                item.status = EmailValidationStatus.FAILED
-            elif item.email != email:
-               item.reason = "Email is not the same"
-               item.status = EmailValidationStatus.FAILED
             else:
                cred = credentialGenerator.issue_credential(didurl, email)
+               if not cred:
+                   raise AppError(description="ERROR: Could not issue credentials")
                item.verifiableCredential = json.loads(cred)
                item.status = EmailValidationStatus.SUCCEDED
 
@@ -72,15 +69,9 @@ class EmailConfirmation(BaseResource):
                 "reason": doc["reason"]
             }
 
-            print(response)
-
             redisBroker.send_email_response(response)
             
             LOG.info("End Callback")
-            self.on_success(res, "OK")
-
-        except RuntimeError as err:
-            LOG.error(err)
             self.on_success(res, "OK")
         except Exception as err:
             message = "Error: " + str(err) + "\n"
@@ -88,6 +79,6 @@ class EmailConfirmation(BaseResource):
             message += "Unexpected error: " + str(exc_type) + "\n"
             message += ' File "' + exc_tb.tb_frame.f_code.co_filename + '", line ' + str(exc_tb.tb_lineno) + "\n"
             LOG.error(message)
-            self.on_success(res, "OK")
+            raise AppError(description=message)
         
    

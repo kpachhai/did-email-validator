@@ -83,23 +83,19 @@ def import_did():
 
         row = DidImport(did=config.WALLET["DID_REQUESTER"])
         row.save()
-
-        LOG.info("DID Requester loaded: {0}".format(config.WALLET["DID_REQUESTER"]))
+        return row
 
     except RuntimeError as err:
         errormessage = did_api.DIDError_GetMessage()
-        LOG.error("DID - last error message: ".encode('utf-8') + errormessage)
-        LOG.error(err)
-        exit(2)
-
+        LOG.error(f"DID - last error message: {errormessage}, Error: {err}")
+        return None
     except Exception as err:
         message = "Error: " + str(err) + "\n"
         exc_type, exc_obj, exc_tb = sys.exc_info()
         message += "Unexpected error: " + str(exc_type) + "\n"
         message += ' File "' + exc_tb.tb_frame.f_code.co_filename + '", line ' + str(exc_tb.tb_lineno) + "\n"
-        LOG.error(message)
-        exit(3)   
-
+        LOG.error(f"Error: {message}") 
+        return None
 
 def issue_credential(target_did, email):
     try:
@@ -171,10 +167,8 @@ def issue_credential(target_did, email):
 
         store_password = config.WALLET["STORE_PASSWORD"].encode('utf-8')
 
-        print(store_password)
         expiration = datetime.now() + datedelta.YEAR
         timestampExp = int(datetime.timestamp(expiration))
-        print(timestampExp)
         # Issue a credential, from Tuum, to the target DID.
         issuedcredential = did_api.Issuer_CreateCredential(
             issuer,
@@ -192,21 +186,17 @@ def issue_credential(target_did, email):
         
         jsonCredential = did_api.Credential_ToJson(issuedcredential, True)
 
-        print(jsonCredential)
-
         return jsonCredential
     except RuntimeError as err:
         errormessage = did_api.DIDError_GetMessage()
-        print("DID - last error message: ".encode('utf-8') + errormessage)
-        print(err)
-        exit(2)
-
+        LOG.error(f"DID - last error message: {errormessage}, Error: {err}")
+        return None
     except Exception as err:
         message = "Error: " + str(err) + "\n"
         exc_type, exc_obj, exc_tb = sys.exc_info()
         message += "Unexpected error: " + str(exc_type) + "\n"
         message += ' File "' + exc_tb.tb_frame.f_code.co_filename + '", line ' + str(exc_tb.tb_lineno) + "\n"
-        print(message)
-        exit(3)
+        LOG.error(f"Error: {message}") 
+        return None
 
     

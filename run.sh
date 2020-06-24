@@ -5,7 +5,7 @@ function start () {
     docker run -d --name validator-mongo                     \
         -e MONGO_INITDB_ROOT_USERNAME=mongoadmin          \
         -e MONGO_INITDB_ROOT_PASSWORD=validatormongo         \
-        -p 27020:27017                                      \
+        -p 27019:27017                                      \
         mongo
 
     virtualenv -p `which python3` .venv
@@ -24,7 +24,7 @@ function start () {
     ;;
     esac
 
-    gunicorn -b 0.0.0.0:8001 --reload app:application
+    gunicorn -b 0.0.0.0:8081 --reload app:application
 }
 
 function stop () {

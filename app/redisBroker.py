@@ -55,6 +55,7 @@ def monitor_redis():
                     verifiableCredential={},
                     reason=""
                 )
+
                 row.save()
 
                 send_email(doc)
@@ -62,16 +63,12 @@ def monitor_redis():
                 row.status = EmailValidationStatus.WAITING_RESPONSE
                 row.save()
                 
-                LOG.info(f'Email sended')
-            except:
-                LOG.info(f'Email Error')
-                print(sys.exc_info())
-                pass
+                LOG.info(f'Email sent')
+            except Exception as e:
+                LOG.error(f'Email Error: {e}')
             
 
 def send_email(doc):
-   
-
     message = MIMEMultipart("alternative")
     message["Subject"] = "Validate your email"
     message["From"] = config.EMAIL["SENDER"]
@@ -113,24 +110,24 @@ def send_email(doc):
     message.attach(image)
 
     with smtplib.SMTP(config.EMAIL["SMTP_SERVER"], config.EMAIL["SMTP_PORT"]) as server:
+        if config.EMAIL["SMTP_TLS"]:
+            LOG.info("SMTP server initiating a secure connection with TLS")
+            server.starttls()
         LOG.info("SMTP server {0}:{1} started".format(config.EMAIL["SMTP_SERVER"], config.EMAIL["SMTP_PORT"]))
-        server.login(config.EMAIL["USERNAME"],config.EMAIL["PASSWORD"])
-        LOG.info("SMTP server logged in with user {0}".format(config.EMAIL["USERNAME"]))
+        server.login(config.EMAIL["SMTP_USERNAME"],config.EMAIL["SMTP_PASSWORD"])
+        LOG.info("SMTP server logged in with user {0}".format(config.EMAIL["SMTP_USERNAME"]))
         server.sendmail(config.EMAIL["SENDER"], [doc["email"]], message.as_bytes())
-        LOG.info("SMTP server send email message")
+        LOG.info("SMTP server sent email message")
 
 
 
 def get_elastos_sign_in_url(requestId):
     jwt_claims = {
         'appid': requestId,
-        'iss': config.WALLET["DID_REQUESTER"],
+        'iss': config.WALLET["DID_REQUESTER"].decode("utf-8"),
         'iat': int(round(time.time())),
         'exp': int(round(time.time() + 300)),
-        'callbackurl': config.EMAIL["CALLBACK_URL"], #redirecturl
-        'claims': {
-            'email': True
-        }
+        'callbackurl': config.EMAIL["CALLBACK_URL"]
     }
     jwt_token = jwt.encode(jwt_claims, config.JWT_SECRETKEY, algorithm='HS256')
 

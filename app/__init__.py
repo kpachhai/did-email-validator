@@ -1,6 +1,7 @@
 import falcon
 import redis
 import json
+import sys
 import time
 import threading
 
@@ -24,7 +25,7 @@ class App(falcon.API):
         self.add_route("/", base.BaseResource())
         
         # Receive callback from elastOS
-        self.add_route("/v1/validator/callback", validation.EmailConfirmation())
+        self.add_route("/v1/validation/callback", validation.EmailConfirmation())
         
         self.add_error_handler(AppError, AppError.handle)
 
@@ -35,7 +36,9 @@ connect(
          config.MONGO['HOST'] + ":" + str(config.MONGO['PORT']) + "/?authSource=admin"
 )
 
-credentialGenerator.import_did()
+result = credentialGenerator.import_did()
+if not result:
+    sys.exit(1)
 
 cors = CORS(
     allow_all_origins=True,
