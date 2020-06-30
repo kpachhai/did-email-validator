@@ -120,8 +120,6 @@ def issue_credential(target_did, email):
 
         requester = config.WALLET["DID_REQUESTER"].encode('utf-8')
 
-        LOG.info("Requester:", requester)
-
         didurl = did_api.DIDURL_FromString(requester, None)
         if didurl == None:
             raise RuntimeError("Failed to get DID URL from string.")
