@@ -38,7 +38,7 @@ def import_did():
         if didimport_rows:
            config.WALLET["DID_REQUESTER"] = didimport_rows[0].did
            LOG.info("Import DID issuer {}".format(config.WALLET["DID_REQUESTER"]))
-           return   
+           return  didimport_rows[0] 
 
         LOG.info("Initializing DID Store")
         # Get the bindings helper object
