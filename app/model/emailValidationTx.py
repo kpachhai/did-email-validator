@@ -3,9 +3,9 @@ from mongoengine import StringField, DictField, DateTimeField, Document
 
 class EmailValidationStatus(object):
       PENDING = "Pending"
-      WAITING_RESPONSE = "Waiting response"
-      SUCCEDED = "Succeded"
-      FAILED = "Failed"
+      WAITING_RESPONSE = "Waiting for response"
+      APPROVED = "Approved"
+      REJECTED = "Rejected"
 
 class EmailValidationTx(Document):
     transactionId = StringField(max_length=40)
