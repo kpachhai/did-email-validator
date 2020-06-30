@@ -38,7 +38,7 @@ def monitor_redis():
     LOG.info("Email validator monitor started")
 
     while True:
-    
+        time.sleep(1)
         message = p.get_message()
 
         if message and not message['data'] == 1:
