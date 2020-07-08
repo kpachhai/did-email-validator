@@ -1,15 +1,13 @@
+*.pyc
+
 .DS_Store
 **/.DS_Store
 
-**/didstore
-**/.cache.did.elastos
-**/lib/__pycache__
-
-localrun.sh
 # Environments
 .env
-venv/
 .venv
+.env.prod
+localrun.sh
 
 # pycharm
 __pycache__
@@ -20,3 +18,9 @@ __pycache__
 
 # idea
 .idea/
+
+# tools
+.mongodb-data
+
+**/didstore
+**/.cache.did.elastos

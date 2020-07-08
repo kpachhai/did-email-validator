@@ -5,6 +5,8 @@ from decouple import config
 
 BRAND_NAME = "DID Email Validator REST API"
 
+PRODUCTION = config('PRODUCTION', default=False, cast=bool)
+
 LOG_LEVEL = "DEBUG"
 
 DEBUG = True
