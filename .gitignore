@@ -24,3 +24,7 @@ __pycache__
 
 **/didstore
 **/.cache.did.elastos
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
