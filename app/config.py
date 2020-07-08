@@ -25,7 +25,8 @@ JWT_SECRETKEY=config('JWT_SECRETKEY', default="SECRET_KEY", cast=str)
 
 REDIS = {
     "HOST": config('REDIS_HOST', default="localhost", cast=str),
-    "PORT": config('REDIS_PORT', default=6379, cast=int)
+    "PORT": config('REDIS_PORT', default=6379, cast=int),
+    "PASSWORD": config('REDIS_PASSWORD', default="", cast=str)
 }
 
 WALLET = {
