@@ -1,0 +1,26 @@
+*.pyc
+
+.DS_Store
+**/.DS_Store
+
+# Environments
+.env
+.venv
+.env.prod
+localrun.sh
+
+# pycharm
+__pycache__
+
+# VScode
+.VScode
+.vscode
+
+# idea
+.idea/
+
+# tools
+.mongodb-data
+
+**/didstore
+**/.cache.did.elastos
