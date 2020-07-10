@@ -52,6 +52,7 @@ def monitor_redis():
                     email=doc["email"],
                     did= doc["did"].split("#")[0],
                     status=EmailValidationStatus.PENDING,
+                    isEmailSent=False,
                     verifiableCredential={},
                     reason=""
                 )
@@ -60,6 +61,7 @@ def monitor_redis():
 
                 send_email(doc)
 
+                row.isEmailSent = True
                 row.status = EmailValidationStatus.WAITING_RESPONSE
                 row.save()
                 

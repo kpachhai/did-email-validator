@@ -1,5 +1,5 @@
 import datetime
-from mongoengine import StringField, DictField, DateTimeField, Document
+from mongoengine import StringField, DictField, DateTimeField, Document, BooleanField
 
 class EmailValidationStatus(object):
       PENDING = "Pending"
@@ -13,6 +13,7 @@ class EmailValidationTx(Document):
     did = StringField(max_length=128)
     status = StringField(max_length=32)
     reason = StringField(max_length=128)
+    isEmailSent=BooleanField()
     verifiableCredential = DictField()
     created = DateTimeField()
     modified = DateTimeField(default=datetime.datetime.now)
@@ -27,6 +28,7 @@ class EmailValidationTx(Document):
             "email": self.email,
             "status": self.status,
             "reason": self.reason,
+            "isEmailSent": self.isEmailSent,
             "verifiableCredential": self.verifiableCredential,
             "created": str(self.created),
             "modified": str(self.modified)

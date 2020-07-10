@@ -100,6 +100,9 @@ def import_did():
 
 def issue_credential(target_did, email):
     try:
+
+        LOG.info("Issuing credential for did {} and email {}".format(target_did, email))
+
         # Get the bindings helper object
         did_api = ela_did.getElaDIDAPI()
 
@@ -161,7 +164,7 @@ def issue_credential(target_did, email):
 
 
 
-        TypesArrayType = ctypes.c_char_p * 1
+        TypesArrayType = ctypes.c_char_p * 2
         PropertyArrayType = ela_did.Property * 1
 
         store_password = config.WALLET["STORE_PASSWORD"].encode('utf-8')
@@ -173,8 +176,8 @@ def issue_credential(target_did, email):
             issuer,
             targetdid,
             crediddidurl,
-            TypesArrayType("VerifiableCredential".encode('utf-8')), #
-            1,
+            TypesArrayType("VerifiableCredential".encode('utf-8'), "EmailCredential".encode('utf-8')), #
+            2,
             PropertyArrayType(emailprop),
             1,
             timestampExp, # Timestamp
@@ -184,7 +187,7 @@ def issue_credential(target_did, email):
             raise RuntimeError("Failed to generate the credential.")
         
         jsonCredential = did_api.Credential_ToJson(issuedcredential, True)
-
+        
         return jsonCredential
     except RuntimeError as err:
         errormessage = did_api.DIDError_GetMessage()
