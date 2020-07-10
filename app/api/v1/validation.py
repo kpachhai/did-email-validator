@@ -24,17 +24,11 @@ class EmailConfirmation(BaseResource):
         LOG.info("Receiving Callback")
 
         data = req.media
-            
+
         try:
             jwt_token = jwt.decode(data["jwt"], verify=False)
             didurl = jwt_token['presentation']['proof']['verificationMethod']
             did = didurl.split("#", 1)[0]
-            email = ""        
-            credentials = jwt_token['presentation']['verifiableCredential']
-            for cred in credentials:
-                if did + "#email" == cred['id']:
-                    email = cred['credentialSubject']['email']
-                
             req = jwt_token["req"].replace("elastos://credaccess/", "")
             requestId = jwt.decode(req, verify=False)["appid"]
         except Exception as err:
@@ -54,7 +48,7 @@ class EmailConfirmation(BaseResource):
             item.reason = "DID is not the same"
             item.status = EmailValidationStatus.REJECTED
         else:
-            cred = credentialGenerator.issue_credential(didurl, email)
+            cred = credentialGenerator.issue_credential(didurl, item.email)
             if not cred:
                 raise AppError(description="Could not issue credentials")
             item.verifiableCredential = json.loads(cred)
