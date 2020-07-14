@@ -3,6 +3,7 @@
 function start () {
     docker container stop validator-mongo || true && docker container rm -f validator-mongo || true
     docker run -d --name validator-mongo                     \
+        -v ${PWD}/.mongodb-data:/data/db                         \
         -e MONGO_INITDB_ROOT_USERNAME=mongoadmin          \
         -e MONGO_INITDB_ROOT_PASSWORD=validatormongo         \
         -p 27019:27017                                      \

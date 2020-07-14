@@ -1,11 +1,13 @@
 import datetime
 from mongoengine import StringField, DictField, DateTimeField, Document, BooleanField
 
+
 class EmailValidationStatus(object):
-      PENDING = "Pending"
-      WAITING_RESPONSE = "Waiting for response"
-      APPROVED = "Approved"
-      REJECTED = "Rejected"
+    PENDING = "Pending"
+    WAITING_RESPONSE = "Waiting for response"
+    APPROVED = "Approved"
+    REJECTED = "Rejected"
+
 
 class EmailValidationTx(Document):
     transactionId = StringField(max_length=40)
@@ -13,7 +15,7 @@ class EmailValidationTx(Document):
     did = StringField(max_length=128)
     status = StringField(max_length=32)
     reason = StringField(max_length=128)
-    isEmailSent=BooleanField()
+    isEmailSent = BooleanField()
     verifiableCredential = DictField()
     created = DateTimeField()
     modified = DateTimeField(default=datetime.datetime.utcnow)

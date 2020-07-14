@@ -30,13 +30,13 @@ REDIS = {
 }
 
 WALLET = {
-    "DID_REQUESTER": "", 
-    "STORE_ROOT": config('WALLET_STORE_ROOT', default="didstore", cast=str),
-    "STORE_PASSWORD": config('WALLET_STORE_PASSWORD', default="password", cast=str),
-    "MNEMONIC": config('WALLET_MNEMONIC', default="bean brave rain crush pottery bone lamp purse vintage valley access lawsuit", cast=str),
-    "MNEMONIC_PASSPHRASE": ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(100)),
-    "RESOLVE_URL": config('WALLET_RESOLVE_URL', default="http://api.elastos.io:20606", cast=str),
-    "CACHE_DIR": config('WALLET_CACHE_DIR', default="./.cache.did.elastos", cast=str)
+    "DID_REQUESTER": config("WALLET_DID_REQUESTER").encode('utf-8'),
+    "STORE_ROOT": config('WALLET_STORE_ROOT', default="didstore", cast=str).encode('utf-8'),
+    "STORE_PASSWORD": config('WALLET_STORE_PASSWORD', default="password", cast=str).encode('utf-8'),
+    "MNEMONIC": config('WALLET_MNEMONIC', default="bean brave rain crush pottery bone lamp purse vintage valley access lawsuit", cast=str).encode('utf-8'),
+    "MNEMONIC_PASSPHRASE": config('WALLET_MNEMONIC_PASSPHRASE', default="password", cast=str).encode('utf-8'),
+    "RESOLVE_URL": config('WALLET_RESOLVE_URL', default="http://api.elastos.io:20606", cast=str).encode('utf-8'),
+    "CACHE_DIR": config('WALLET_CACHE_DIR', default="./.cache.did.elastos", cast=str).encode('utf-8')
 }
 
 EMAIL = {

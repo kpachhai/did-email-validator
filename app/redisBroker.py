@@ -1,12 +1,10 @@
 import redis
-import sys
 import json
 import time
-import requests
 import jwt
 import qrcode
+import sys
 import smtplib
-import base64
 import io
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
@@ -18,20 +16,18 @@ from app.model.emailValidationTx import EmailValidationTx, EmailValidationStatus
 LOG = log.get_logger()
 
 
-
-
 def send_email_response(doc):
-    broker =  redis.Redis(host = config.REDIS['HOST'], port = config.REDIS['PORT'], password = config.REDIS['PASSWORD'])
+    broker = redis.Redis(host=config.REDIS['HOST'], port=config.REDIS['PORT'], password=config.REDIS['PASSWORD'])
     channel = "email-validator-response"
     broker.publish(channel, json.dumps(doc))
 
-   
+
 def monitor_redis():
     LOG.info("Starting email validator monitor")
-    
-    channel =  "email-validator-{0}".format(config.VOUCH_APIKEY)
 
-    client = redis.Redis(host = config.REDIS['HOST'], port = config.REDIS['PORT'], password = config.REDIS['PASSWORD'])
+    channel = "email-validator-{0}".format(config.VOUCH_APIKEY)
+
+    client = redis.Redis(host=config.REDIS['HOST'], port=config.REDIS['PORT'], password=config.REDIS['PASSWORD'])
     p = client.pubsub()
     p.subscribe(channel)
 
@@ -50,7 +46,7 @@ def monitor_redis():
                 row = EmailValidationTx(
                     transactionId=doc["transactionId"],
                     email=doc["email"],
-                    did= doc["did"].split("#")[0],
+                    did=doc["did"].split("#")[0],
                     status=EmailValidationStatus.PENDING,
                     isEmailSent=False,
                     verifiableCredential={},
@@ -64,11 +60,15 @@ def monitor_redis():
                 row.isEmailSent = True
                 row.status = EmailValidationStatus.WAITING_RESPONSE
                 row.save()
-                
+
                 LOG.info(f'Email sent')
-            except Exception as e:
-                LOG.error(f'Email Error: {e}')
-            
+            except Exception as err:
+                message = "Error: " + str(err) + "\n"
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                message += "Unexpected error: " + str(exc_type) + "\n"
+                message += ' File "' + exc_tb.tb_frame.f_code.co_filename + '", line ' + str(exc_tb.tb_lineno) + "\n"
+                LOG.error(f"Error: {message}")
+
 
 def send_email(doc):
     message = MIMEMultipart("alternative")
@@ -88,12 +88,12 @@ def send_email(doc):
     part = MIMEText(html, "html")
     message.attach(part)
 
-    qrCodeUrl =  get_elastos_sign_in_url(doc["transactionId"])
+    qrCodeUrl = get_elastos_sign_in_url(doc["transactionId"])
     qr = qrcode.QRCode(
-        version = 1,
-        error_correction = qrcode.constants.ERROR_CORRECT_H,
-        box_size = 5,
-        border = 4,
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_H,
+        box_size=5,
+        border=4,
     )
     qr.add_data(qrCodeUrl)
     qr.make(fit=True)
@@ -101,11 +101,8 @@ def send_email(doc):
 
     buf = io.BytesIO()
     img.save(buf, format='PNG')
-     
-    
-    image = MIMEImage(buf.getvalue())
 
-    
+    image = MIMEImage(buf.getvalue())
 
     # Specify the  ID according to the img src in the HTML part
     image.add_header('Content-ID', '<qrcodeelastos>')
@@ -116,17 +113,16 @@ def send_email(doc):
             LOG.info("SMTP server initiating a secure connection with TLS")
             server.starttls()
         LOG.info("SMTP server {0}:{1} started".format(config.EMAIL["SMTP_SERVER"], config.EMAIL["SMTP_PORT"]))
-        server.login(config.EMAIL["SMTP_USERNAME"],config.EMAIL["SMTP_PASSWORD"])
+        server.login(config.EMAIL["SMTP_USERNAME"], config.EMAIL["SMTP_PASSWORD"])
         LOG.info("SMTP server logged in with user {0}".format(config.EMAIL["SMTP_USERNAME"]))
         server.sendmail(config.EMAIL["SENDER"], [doc["email"]], message.as_bytes())
         LOG.info("SMTP server sent email message")
 
 
-
 def get_elastos_sign_in_url(requestId):
     jwt_claims = {
         'appid': requestId,
-        'iss': config.WALLET["DID_REQUESTER"],
+        'iss': config.WALLET["DID_REQUESTER"].decode('utf-8'),
         'iat': int(round(time.time())),
         'exp': int(round(time.time() + 300)),
         'callbackurl': config.EMAIL["CALLBACK_URL"]
@@ -136,6 +132,3 @@ def get_elastos_sign_in_url(requestId):
     url = 'elastos://credaccess/' + jwt_token.decode()
 
     return url
-    
-
-    

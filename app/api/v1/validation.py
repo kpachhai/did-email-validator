@@ -1,11 +1,7 @@
-import base64
 import jwt
-import os
-import sys
-import textwrap
-import ctypes
 import json
-from app import log,config, redisBroker, credentialGenerator
+from app import log, config, redisBroker
+from app.constants import CRED_GEN
 from app.api.common import BaseResource
 from app.model.emailValidationTx import EmailValidationTx, EmailValidationStatus
 from app.errors import (
@@ -27,8 +23,8 @@ class EmailConfirmation(BaseResource):
 
         try:
             jwt_token = jwt.decode(data["jwt"], verify=False)
-            didurl = jwt_token['presentation']['proof']['verificationMethod']
-            did = didurl.split("#", 1)[0]
+            target_did = jwt_token['presentation']['proof']['verificationMethod']
+            did = target_did.split("#", 1)[0]
             req = jwt_token["req"].replace("elastos://credaccess/", "")
             requestId = jwt.decode(req, verify=False)["appid"]
         except Exception as err:
@@ -48,7 +44,9 @@ class EmailConfirmation(BaseResource):
             item.reason = "DID is not the same"
             item.status = EmailValidationStatus.REJECTED
         else:
-            cred = credentialGenerator.issue_credential(didurl, item.email)
+            print(CRED_GEN)
+            print(CRED_GEN.did)
+            cred = CRED_GEN.issue_credential(target_did, item.email)
             if not cred:
                 raise AppError(description="Could not issue credentials")
             item.verifiableCredential = json.loads(cred)
@@ -70,7 +68,5 @@ class EmailConfirmation(BaseResource):
         except Exception as err:
             raise AppError(description="Could not send message to redis broker: " + str(err))
             
-        LOG.info("End Callback")
+        LOG.info(f"Successfully issued credential: {json.dumps(doc)}")
         self.on_success(res, "OK")
-        
-   

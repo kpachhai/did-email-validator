@@ -22,6 +22,12 @@ cp .env.example .env
 ```
 ./run.sh start
 ```
+- OPTIONAL: You can also run using docker
+```
+docker build -t did-email-validator .; 
+docker container stop validator || true && docker container rm -f validator || true; 
+docker run -p 8081:5000 -v $PWD/.env:/src/.env --name validator did-email-validator
+```
 
 # Verify
 - To check whether the API is working:
