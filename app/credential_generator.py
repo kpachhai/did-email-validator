@@ -19,7 +19,6 @@ class CredentialGenerator:
         self.did_api = ela_did.getElaDIDAPI()
         self.did_store = self.initialize_did_store()
         if self.did_store:
-            print(self.did_store)
             self.did = self.import_did()
         else:
             self.did = None

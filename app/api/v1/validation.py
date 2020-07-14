@@ -44,8 +44,6 @@ class EmailConfirmation(BaseResource):
             item.reason = "DID is not the same"
             item.status = EmailValidationStatus.REJECTED
         else:
-            print(CRED_GEN)
-            print(CRED_GEN.did)
             cred = CRED_GEN.issue_credential(target_did, item.email)
             if not cred:
                 raise AppError(description="Could not issue credentials")
