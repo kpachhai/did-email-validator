@@ -80,7 +80,7 @@ def send_email(doc):
     html = """\
     <html>
     <body>
-    <p>Scan this QR Code using elastOS to validate your email</p>
+    <h2>Scan this QR Code using elastOS to validate your email</h2>
     <img src="cid:qrcodeelastos" />
     </body>
     </html>
