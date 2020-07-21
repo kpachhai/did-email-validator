@@ -71,17 +71,19 @@ def monitor_redis():
 
 
 def send_email(doc):
-    message = MIMEMultipart("alternative")
+    message = MIMEMultipart("mixed")
     message["Subject"] = "Validate your email"
     message["From"] = config.EMAIL["SENDER"]
     message["To"] = doc["email"]
+
+    qrCodeName = f'{doc["transactionId"]}.png'
 
     # write the HTML part
     html = """\
     <html>
     <body>
     <h2>Scan this QR Code using elastOS to validate your email</h2>
-    <img src="cid:qrcodeelastos" />
+    <img src="cid:qrcodeelastos" alt="Use the attached file" />
     </body>
     </html>
     """
@@ -103,10 +105,12 @@ def send_email(doc):
     img.save(buf, format='PNG')
 
     image = MIMEImage(buf.getvalue())
-
-    # Specify the  ID according to the img src in the HTML part
-    image.add_header('Content-ID', '<qrcodeelastos>')
+    image.add_header('Content-ID', f'<qrcodeelastos>')
     message.attach(image)
+
+    attach = MIMEImage(buf.getvalue())
+    attach.add_header('Content-Disposition', 'attachment', filename=qrCodeName)
+    message.attach(attach)
 
     with smtplib.SMTP(config.EMAIL["SMTP_SERVER"], config.EMAIL["SMTP_PORT"]) as server:
         if config.EMAIL["SMTP_TLS"]:
