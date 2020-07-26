@@ -3,10 +3,11 @@ from mongoengine import StringField, DictField, DateTimeField, Document, Boolean
 
 
 class EmailValidationStatus(object):
-    PENDING = "Pending"
-    WAITING_RESPONSE = "Waiting for response"
-    APPROVED = "Approved"
-    REJECTED = "Rejected"
+      PENDING = "Pending"
+      CANCELED = "Canceled"
+      WAITING_RESPONSE = "Waiting for response"
+      APPROVED = "Approved"
+      REJECTED = "Rejected"
 
 
 class EmailValidationTx(Document):

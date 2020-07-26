@@ -36,9 +36,16 @@ class EmailConfirmation(BaseResource):
             raise AppError(description="Request not found")
 
         item = rows[0]
-            
+
+        if item.status == EmailValidationStatus.CANCELED:
+            LOG.info("This transaction is canceled")
+            self.on_success(res, "OK")
+            return
+
         if not item.status == EmailValidationStatus.WAITING_RESPONSE:
             raise AppError(description="Request is already processed")
+
+        
           
         if item.did != did:
             item.reason = "DID is not the same"
@@ -54,6 +61,8 @@ class EmailConfirmation(BaseResource):
         doc = item.as_dict()
 
         response = {
+            "isSuccess": True,
+            "action": "update",
             "transactionId": doc["transactionId"],
             "validatorKey": config.VOUCH_APIKEY,
             "verifiableCredential": doc["verifiableCredential"],

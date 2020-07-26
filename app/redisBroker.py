@@ -15,19 +15,18 @@ from app.model.emailValidationTx import EmailValidationTx, EmailValidationStatus
 
 LOG = log.get_logger()
 
+client = redis.Redis(host=config.REDIS['HOST'], port=config.REDIS['PORT'], password=config.REDIS['PASSWORD'])
 
 def send_email_response(doc):
-    broker = redis.Redis(host=config.REDIS['HOST'], port=config.REDIS['PORT'], password=config.REDIS['PASSWORD'])
     channel = "email-validator-response"
-    broker.publish(channel, json.dumps(doc))
+    client.publish(channel, json.dumps(doc))
 
 
 def monitor_redis():
     LOG.info("Starting email validator monitor")
-
-    channel = "email-validator-{0}".format(config.VOUCH_APIKEY)
-
-    client = redis.Redis(host=config.REDIS['HOST'], port=config.REDIS['PORT'], password=config.REDIS['PASSWORD'])
+   
+    channel =  "email-validator-{0}".format(config.VOUCH_APIKEY)
+    
     p = client.pubsub()
     p.subscribe(channel)
 
@@ -43,23 +42,10 @@ def monitor_redis():
                 doc = json.loads(message)
                 LOG.info(f'Email-Validator Received message: {message}')
 
-                row = EmailValidationTx(
-                    transactionId=doc["transactionId"],
-                    email=doc["email"],
-                    did=doc["did"].split("#")[0],
-                    status=EmailValidationStatus.PENDING,
-                    isEmailSent=False,
-                    verifiableCredential={},
-                    reason=""
-                )
-
-                row.save()
-
-                send_email(doc)
-
-                row.isEmailSent = True
-                row.status = EmailValidationStatus.WAITING_RESPONSE
-                row.save()
+                if doc["action"] == "cancel":
+                   cancel_validation(doc)
+                else:
+                   new_validation(doc)
 
                 LOG.info(f'Email sent')
             except Exception as err:
@@ -68,6 +54,91 @@ def monitor_redis():
                 message += "Unexpected error: " + str(exc_type) + "\n"
                 message += ' File "' + exc_tb.tb_frame.f_code.co_filename + '", line ' + str(exc_tb.tb_lineno) + "\n"
                 LOG.error(f"Error: {message}")
+
+
+def new_validation(doc):
+    row = EmailValidationTx(
+        transactionId=doc["transactionId"],
+        email=doc["email"],
+        did=doc["did"].split("#")[0],
+        status=EmailValidationStatus.PENDING,
+        isEmailSent=False,
+        verifiableCredential={},
+        reason=""
+    )
+
+    row.save()
+
+    send_email(doc)
+
+    row.isEmailSent = True
+    row.status = EmailValidationStatus.WAITING_RESPONSE
+    row.save()
+
+    send_email_response({
+            "isSuccess": True,
+            "transactionId": doc["transactionId"],
+            "validatorKey": config.VOUCH_APIKEY,
+            "action": "create",
+            "response": "Success",
+            "reason": "Transaction received with success"
+        })
+
+
+def cancel_validation(doc):
+    LOG.info(f'Email-Validator Cancel transaction')
+    rows = EmailValidationTx.objects(transactionId=doc["transactionId"])
+    if not rows:
+        LOG.info(f'Transaction {doc["transactionId"]} not found')
+        send_email_response({
+            "isSuccess": False,
+            "transactionId": doc["transactionId"],
+            "validatorKey": config.VOUCH_APIKEY,
+            "action": "cancel",
+            "response": "Error",
+            "reason": "Transaction not found"
+        })
+        return
+
+    transaction = rows[0]
+
+    if transaction.status == EmailValidationStatus.CANCELED:
+        LOG.info('Transaction already canceled')
+        send_email_response({
+            "isSuccess": True,
+            "transactionId": doc["transactionId"],
+            "validatorKey": config.VOUCH_APIKEY,
+            "action": "cancel",
+            "response": "Canceled",
+            "reason": "Transaction already canceled"
+        })
+        return
+
+    if transaction.status != EmailValidationStatus.WAITING_RESPONSE and transaction.status != EmailValidationStatus.PENDING:
+        LOG.info('Transaction already processed')
+        send_email_response({
+            "isSuccess": False,
+            "transactionId": doc["transactionId"],
+            "validatorKey": config.VOUCH_APIKEY,
+            "action": "cancel",
+            "response": "Error",
+            "reason": "Transaction already processed"
+        })
+        return     
+
+    transaction.status = EmailValidationStatus.CANCELED
+    transaction.save()
+
+    send_email_response({
+            "isSuccess": True,
+            "transactionId": doc["transactionId"],
+            "validatorKey": config.VOUCH_APIKEY,
+            "action": "cancel",
+            "response": "Success",
+            "reason": "Transaction canceled with success"
+        })
+    
+
 
 
 def send_email(doc):
