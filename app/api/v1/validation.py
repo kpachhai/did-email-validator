@@ -71,7 +71,7 @@ class EmailConfirmation(BaseResource):
         }
 
         try:
-            redisBroker.send_email_response(response)
+            redisBroker.send_validation_response(response)
         except Exception as err:
             raise AppError(description="Could not send message to redis broker: " + str(err))
             

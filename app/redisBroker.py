@@ -17,20 +17,20 @@ LOG = log.get_logger()
 
 client = redis.Redis(host=config.REDIS['HOST'], port=config.REDIS['PORT'], password=config.REDIS['PASSWORD'])
 
-def send_email_response(doc):
-    channel = "email-validator-response"
+def send_validation_response(doc):
+    channel = "validator-response"
     client.publish(channel, json.dumps(doc))
 
 
 def monitor_redis():
-    LOG.info("Starting email validator monitor")
+    LOG.info("Starting validator monitor")
    
-    channel =  "email-validator-{0}".format(config.VOUCH_APIKEY)
+    channel =  "validator-{0}".format(config.VOUCH_APIKEY)
     
     p = client.pubsub()
     p.subscribe(channel)
 
-    LOG.info("Email validator monitor started")
+    LOG.info("Validator monitor started")
 
     while True:
         time.sleep(1)
@@ -40,14 +40,15 @@ def monitor_redis():
             try:
                 message = message['data'].decode('utf-8')
                 doc = json.loads(message)
-                LOG.info(f'Email-Validator Received message: {message}')
+                LOG.info(f'Validator Received message: {message}')
 
-                if doc["action"] == "cancel":
-                   cancel_validation(doc)
-                else:
-                   new_validation(doc)
+                if doc["type"] == "email":
+                    if doc["action"] == "cancel":
+                        cancel_email_validation(doc)
+                    else:
+                        new_email_validation(doc)
+                    LOG.info(f'Email sent')
 
-                LOG.info(f'Email sent')
             except Exception as err:
                 message = "Error: " + str(err) + "\n"
                 exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -56,7 +57,7 @@ def monitor_redis():
                 LOG.error(f"Error: {message}")
 
 
-def new_validation(doc):
+def new_email_validation(doc):
     row = EmailValidationTx(
         transactionId=doc["transactionId"],
         email=doc["email"],
@@ -75,7 +76,7 @@ def new_validation(doc):
     row.status = EmailValidationStatus.WAITING_RESPONSE
     row.save()
 
-    send_email_response({
+    send_validation_response({
             "isSuccess": True,
             "transactionId": doc["transactionId"],
             "validatorKey": config.VOUCH_APIKEY,
@@ -85,12 +86,12 @@ def new_validation(doc):
         })
 
 
-def cancel_validation(doc):
+def cancel_email_validation(doc):
     LOG.info(f'Email-Validator Cancel transaction')
     rows = EmailValidationTx.objects(transactionId=doc["transactionId"])
     if not rows:
         LOG.info(f'Transaction {doc["transactionId"]} not found')
-        send_email_response({
+        send_validation_response({
             "isSuccess": False,
             "transactionId": doc["transactionId"],
             "validatorKey": config.VOUCH_APIKEY,
@@ -104,7 +105,7 @@ def cancel_validation(doc):
 
     if transaction.status == EmailValidationStatus.CANCELED:
         LOG.info('Transaction already canceled')
-        send_email_response({
+        send_validation_response({
             "isSuccess": True,
             "transactionId": doc["transactionId"],
             "validatorKey": config.VOUCH_APIKEY,
@@ -116,7 +117,7 @@ def cancel_validation(doc):
 
     if transaction.status != EmailValidationStatus.WAITING_RESPONSE and transaction.status != EmailValidationStatus.PENDING:
         LOG.info('Transaction already processed')
-        send_email_response({
+        send_validation_response({
             "isSuccess": False,
             "transactionId": doc["transactionId"],
             "validatorKey": config.VOUCH_APIKEY,
@@ -129,7 +130,7 @@ def cancel_validation(doc):
     transaction.status = EmailValidationStatus.CANCELED
     transaction.save()
 
-    send_email_response({
+    send_validation_response({
             "isSuccess": True,
             "transactionId": doc["transactionId"],
             "validatorKey": config.VOUCH_APIKEY,
