@@ -15,23 +15,22 @@ from app.model.emailValidationTx import EmailValidationTx, EmailValidationStatus
 
 LOG = log.get_logger()
 
+client = redis.Redis(host=config.REDIS['HOST'], port=config.REDIS['PORT'], password=config.REDIS['PASSWORD'])
 
-def send_email_response(doc):
-    broker = redis.Redis(host=config.REDIS['HOST'], port=config.REDIS['PORT'], password=config.REDIS['PASSWORD'])
-    channel = "email-validator-response"
-    broker.publish(channel, json.dumps(doc))
+def send_validation_response(doc):
+    channel = "validator-response"
+    client.publish(channel, json.dumps(doc))
 
 
 def monitor_redis():
-    LOG.info("Starting email validator monitor")
-
-    channel = "email-validator-{0}".format(config.VOUCH_APIKEY)
-
-    client = redis.Redis(host=config.REDIS['HOST'], port=config.REDIS['PORT'], password=config.REDIS['PASSWORD'])
+    LOG.info("Starting validator monitor")
+   
+    channel =  "validator-{0}".format(config.VOUCH_APIKEY)
+    
     p = client.pubsub()
     p.subscribe(channel)
 
-    LOG.info("Email validator monitor started")
+    LOG.info("Validator monitor started")
 
     while True:
         time.sleep(1)
@@ -41,27 +40,15 @@ def monitor_redis():
             try:
                 message = message['data'].decode('utf-8')
                 doc = json.loads(message)
-                LOG.info(f'Email-Validator Received message: {message}')
+                LOG.info(f'Validator Received message: {message}')
 
-                row = EmailValidationTx(
-                    transactionId=doc["transactionId"],
-                    email=doc["email"],
-                    did=doc["did"].split("#")[0],
-                    status=EmailValidationStatus.PENDING,
-                    isEmailSent=False,
-                    verifiableCredential={},
-                    reason=""
-                )
+                if doc["type"] == "email":
+                    if doc["action"] == "cancel":
+                        cancel_email_validation(doc)
+                    else:
+                        new_email_validation(doc)
+                    LOG.info(f'Email sent')
 
-                row.save()
-
-                send_email(doc)
-
-                row.isEmailSent = True
-                row.status = EmailValidationStatus.WAITING_RESPONSE
-                row.save()
-
-                LOG.info(f'Email sent')
             except Exception as err:
                 message = "Error: " + str(err) + "\n"
                 exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -70,11 +57,97 @@ def monitor_redis():
                 LOG.error(f"Error: {message}")
 
 
+def new_email_validation(doc):
+    params = doc["params"]
+    row = EmailValidationTx(
+        transactionId=doc["transactionId"],
+        email=params["email"],
+        did=doc["did"].split("#")[0],
+        status=EmailValidationStatus.PENDING,
+        isEmailSent=False,
+        verifiableCredential={},
+        reason=""
+    )
+
+    row.save()
+
+    send_email(doc)
+
+    row.isEmailSent = True
+    row.status = EmailValidationStatus.WAITING_RESPONSE
+    row.save()
+
+    send_validation_response({
+            "isSuccess": True,
+            "transactionId": doc["transactionId"],
+            "validatorKey": config.VOUCH_APIKEY,
+            "action": "create",
+            "response": "Success",
+            "reason": "Transaction received with success"
+        })
+
+
+def cancel_email_validation(doc):
+    LOG.info(f'Email-Validator Cancel transaction')
+    rows = EmailValidationTx.objects(transactionId=doc["transactionId"])
+    if not rows:
+        LOG.info(f'Transaction {doc["transactionId"]} not found')
+        send_validation_response({
+            "isSuccess": False,
+            "transactionId": doc["transactionId"],
+            "validatorKey": config.VOUCH_APIKEY,
+            "action": "cancel",
+            "response": "Error",
+            "reason": "Transaction not found"
+        })
+        return
+
+    transaction = rows[0]
+
+    if transaction.status == EmailValidationStatus.CANCELED:
+        LOG.info('Transaction already canceled')
+        send_validation_response({
+            "isSuccess": True,
+            "transactionId": doc["transactionId"],
+            "validatorKey": config.VOUCH_APIKEY,
+            "action": "cancel",
+            "response": "Canceled",
+            "reason": "Transaction already canceled"
+        })
+        return
+
+    if transaction.status != EmailValidationStatus.WAITING_RESPONSE and transaction.status != EmailValidationStatus.PENDING:
+        LOG.info('Transaction already processed')
+        send_validation_response({
+            "isSuccess": False,
+            "transactionId": doc["transactionId"],
+            "validatorKey": config.VOUCH_APIKEY,
+            "action": "cancel",
+            "response": "Error",
+            "reason": "Transaction already processed"
+        })
+        return     
+
+    transaction.status = EmailValidationStatus.CANCELED
+    transaction.save()
+
+    send_validation_response({
+            "isSuccess": True,
+            "transactionId": doc["transactionId"],
+            "validatorKey": config.VOUCH_APIKEY,
+            "action": "cancel",
+            "response": "Success",
+            "reason": "Transaction canceled with success"
+        })
+    
+
+
+
 def send_email(doc):
     message = MIMEMultipart("mixed")
     message["Subject"] = "Validate your email"
     message["From"] = config.EMAIL["SENDER"]
-    message["To"] = doc["email"]
+    message["To"] = doc["params"]["email"]
 
     qrCodeName = f'{doc["transactionId"]}.png'
 
@@ -119,7 +192,7 @@ def send_email(doc):
         LOG.info("SMTP server {0}:{1} started".format(config.EMAIL["SMTP_SERVER"], config.EMAIL["SMTP_PORT"]))
         server.login(config.EMAIL["SMTP_USERNAME"], config.EMAIL["SMTP_PASSWORD"])
         LOG.info("SMTP server logged in with user {0}".format(config.EMAIL["SMTP_USERNAME"]))
-        server.sendmail(config.EMAIL["SENDER"], [doc["email"]], message.as_bytes())
+        server.sendmail(config.EMAIL["SENDER"], [doc["params"]["email"]], message.as_bytes())
         LOG.info("SMTP server sent email message")
 
 

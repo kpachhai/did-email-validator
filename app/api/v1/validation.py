@@ -17,7 +17,7 @@ class EmailConfirmation(BaseResource):
     """
 
     def on_post(self, req, res):
-        LOG.info("Receiving Callback")
+        LOG.info("Receiving Callback: /v1/validation/callback")
 
         data = req.media
 
@@ -29,17 +29,22 @@ class EmailConfirmation(BaseResource):
             requestId = jwt.decode(req, verify=False)["appid"]
         except Exception as err:
             raise AppError(description="Could not parse the response correctly: " + str(err))
-        
+
         rows = EmailValidationTx.objects(transactionId=requestId)
 
         if not rows:
             raise AppError(description="Request not found")
 
         item = rows[0]
-            
+
+        if item.status == EmailValidationStatus.CANCELED:
+            LOG.info("This transaction is canceled")
+            self.on_success(res, "OK")
+            return
+
         if not item.status == EmailValidationStatus.WAITING_RESPONSE:
             raise AppError(description="Request is already processed")
-          
+
         if item.did != did:
             item.reason = "DID is not the same"
             item.status = EmailValidationStatus.REJECTED
@@ -54,6 +59,8 @@ class EmailConfirmation(BaseResource):
         doc = item.as_dict()
 
         response = {
+            "isSuccess": True,
+            "action": "update",
             "transactionId": doc["transactionId"],
             "validatorKey": config.VOUCH_APIKEY,
             "verifiableCredential": doc["verifiableCredential"],
@@ -62,9 +69,9 @@ class EmailConfirmation(BaseResource):
         }
 
         try:
-            redisBroker.send_email_response(response)
+            redisBroker.send_validation_response(response)
         except Exception as err:
             raise AppError(description="Could not send message to redis broker: " + str(err))
-            
+
         LOG.info(f"Successfully issued credential: {json.dumps(doc)}")
         self.on_success(res, "OK")
