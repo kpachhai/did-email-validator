@@ -17,7 +17,7 @@ class EmailConfirmation(BaseResource):
     """
 
     def on_post(self, req, res):
-        LOG.info("Receiving Callback")
+        LOG.info("Receiving Callback: /v1/validation/callback")
 
         data = req.media
 
@@ -29,7 +29,7 @@ class EmailConfirmation(BaseResource):
             requestId = jwt.decode(req, verify=False)["appid"]
         except Exception as err:
             raise AppError(description="Could not parse the response correctly: " + str(err))
-        
+
         rows = EmailValidationTx.objects(transactionId=requestId)
 
         if not rows:
@@ -45,8 +45,6 @@ class EmailConfirmation(BaseResource):
         if not item.status == EmailValidationStatus.WAITING_RESPONSE:
             raise AppError(description="Request is already processed")
 
-        
-          
         if item.did != did:
             item.reason = "DID is not the same"
             item.status = EmailValidationStatus.REJECTED
@@ -74,6 +72,6 @@ class EmailConfirmation(BaseResource):
             redisBroker.send_validation_response(response)
         except Exception as err:
             raise AppError(description="Could not send message to redis broker: " + str(err))
-            
+
         LOG.info(f"Successfully issued credential: {json.dumps(doc)}")
         self.on_success(res, "OK")
