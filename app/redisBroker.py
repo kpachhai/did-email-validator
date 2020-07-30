@@ -58,9 +58,10 @@ def monitor_redis():
 
 
 def new_email_validation(doc):
+    params = doc["params"]
     row = EmailValidationTx(
         transactionId=doc["transactionId"],
-        email=doc["email"],
+        email=params["email"],
         did=doc["did"].split("#")[0],
         status=EmailValidationStatus.PENDING,
         isEmailSent=False,
@@ -146,7 +147,7 @@ def send_email(doc):
     message = MIMEMultipart("mixed")
     message["Subject"] = "Validate your email"
     message["From"] = config.EMAIL["SENDER"]
-    message["To"] = doc["email"]
+    message["To"] = doc["params"]["email"]
 
     qrCodeName = f'{doc["transactionId"]}.png'
 
@@ -191,7 +192,7 @@ def send_email(doc):
         LOG.info("SMTP server {0}:{1} started".format(config.EMAIL["SMTP_SERVER"], config.EMAIL["SMTP_PORT"]))
         server.login(config.EMAIL["SMTP_USERNAME"], config.EMAIL["SMTP_PASSWORD"])
         LOG.info("SMTP server logged in with user {0}".format(config.EMAIL["SMTP_USERNAME"]))
-        server.sendmail(config.EMAIL["SENDER"], [doc["email"]], message.as_bytes())
+        server.sendmail(config.EMAIL["SENDER"], [doc["params"]["email"]], message.as_bytes())
         LOG.info("SMTP server sent email message")
 
 
