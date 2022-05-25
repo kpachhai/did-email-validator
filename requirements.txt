@@ -4,7 +4,7 @@ gunicorn==20.0.4
 waitress==1.4.3
 requests==2.23.0
 redis==3.5.2
-PyJWT==1.7.1
+PyJWT==2.4.0
 qrcode==6.1
 Pillow==8.1.1
 pymongo[srv]==3.10.1
