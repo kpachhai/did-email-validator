@@ -2,7 +2,7 @@ falcon==2.0.0
 falcon-cors==1.1.7
 gunicorn==20.0.4
 waitress==1.4.3
-requests==2.23.0
+requests==2.31.0
 redis==3.5.2
 PyJWT==1.7.1
 qrcode==6.1
